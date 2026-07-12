@@ -1,0 +1,36 @@
+{
+  "techniques": [
+    {
+      "name": "GBuffer",
+      "passes": [
+        {
+          "name": "P0",
+          "vertexShader": {
+            "source": "../shaders/gbuffer_vs.hlsl",
+            "entry": "VSMain",
+            "samplers": 0,
+            "uniforms": 1
+          },
+          "pixelShader": {
+            "source": "../shaders/gbuffer_ps.hlsl",
+            "entry": "PSMain",
+            "samplers": 0,
+            "uniforms": 0
+          }
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "name": "ViewProj",
+      "type": "MATRIX",
+      "register": 0
+    },
+    {
+      "name": "View",
+      "type": "MATRIX",
+      "register": 4
+    }
+  ]
+}

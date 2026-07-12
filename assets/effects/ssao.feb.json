@@ -1,0 +1,37 @@
+{
+  "techniques": [
+    {
+      "name": "SSAO",
+      "passes": [
+        {
+          "name": "P0",
+          "vertexShader": {
+            "source": "../shaders/ssao_vs.hlsl",
+            "entry": "VSMain",
+            "samplers": 0,
+            "uniforms": 0
+          },
+          "pixelShader": {
+            "source": "../shaders/ssao_ps.hlsl",
+            "entry": "PSMain",
+            "samplers": 2,
+            "uniforms": 1
+          }
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "name": "Projection",
+      "type": "MATRIX",
+      "register": 0
+    },
+    {
+      "name": "SSAOParams",
+      "type": "FLOAT4",
+      "register": 4,
+      "default": [0.5, 0.025, 1.0, 0.0]
+    }
+  ]
+}

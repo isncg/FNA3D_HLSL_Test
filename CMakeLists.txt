@@ -93,6 +93,22 @@ target_link_libraries(matviz_test
 	m
 )
 
+# --- ssao_test ---
+add_executable(ssao_test
+	src/ssao_test.c
+	src/common.c
+	src/math3d.c
+)
+target_include_directories(ssao_test PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+target_link_libraries(ssao_test
+	SDL3::SDL3
+	FNA3D
+	m
+)
+
 # --- teapot_pbr_test ---
 add_executable(teapot_pbr_test
 	src/teapot_pbr.c
