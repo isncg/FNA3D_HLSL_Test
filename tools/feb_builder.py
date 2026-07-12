@@ -60,6 +60,11 @@ def compile_hlsl_to_spirv(source_path: str, entry_point: str, stage: str,
     else:  # pixel
         fvk_globals_set = "3"
 
+    # SDL_GPU fixed descriptor set layout for texture/sampler bindings:
+    #   Vertex shader:  Samplers at DescriptorSet 0 (matches DXC default)
+    #   Pixel shader:   Samplers at DescriptorSet 2 (must override DXC default)
+    sampler_set = "0" if stage == "vertex" else "2"
+
     cmd = [
         "dxc",
         "-spirv",
@@ -69,6 +74,15 @@ def compile_hlsl_to_spirv(source_path: str, entry_point: str, stage: str,
         "-Fo", output_path,
         "-fvk-bind-globals", "0", fvk_globals_set,
     ]
+
+    # Map texture/sampler registers to the correct descriptor set.
+    # -fvk-bind-register <type-number> <space> <binding> <set>
+    # space=0 is the default register space in HLSL.
+    # Each HLSL register(tN)/register(sN) pair is a combined image sampler
+    # at Set<s> Binding<N> in the generated SPIR-V.
+    for i in range(samplers):
+        cmd.extend(["-fvk-bind-register", f"t{i}", "0", str(i), sampler_set])
+        cmd.extend(["-fvk-bind-register", f"s{i}", "0", str(i), sampler_set])
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
