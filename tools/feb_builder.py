@@ -38,7 +38,8 @@ FEB_VERSION = 1
 HEADER_SIZE = 64  # 16 * uint32
 
 
-def compile_hlsl_to_spirv(source_path: str, entry_point: str, stage: str) -> bytes:
+def compile_hlsl_to_spirv(source_path: str, entry_point: str, stage: str,
+                         samplers: int = 0) -> bytes:
     """Compile an HLSL source file to SPIR-V using DXC."""
     if stage == "vertex":
         profile = "vs_6_0"
@@ -49,6 +50,16 @@ def compile_hlsl_to_spirv(source_path: str, entry_point: str, stage: str) -> byt
 
     output_path = source_path + ".spv"
 
+    # SDL_GPU expects specific descriptor sets for uniform buffers:
+    #   Vertex shaders:   UBOs at DescriptorSet 1 (samplers at Set 0)
+    #   Fragment shaders: UBOs at DescriptorSet 3 (samplers at Set 2)
+    # DXC defaults $Globals to DescriptorSet 0, so we shift it to the
+    # correct set for each stage.
+    if stage == "vertex":
+        fvk_globals_set = "1"
+    else:  # pixel
+        fvk_globals_set = "3"
+
     cmd = [
         "dxc",
         "-spirv",
@@ -56,6 +67,7 @@ def compile_hlsl_to_spirv(source_path: str, entry_point: str, stage: str) -> byt
         f"-E", entry_point,
         source_path,
         "-Fo", output_path,
+        "-fvk-bind-globals", "0", fvk_globals_set,
     ]
 
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -137,19 +149,23 @@ def build_feb(manifest: dict, manifest_dir: str) -> bytes:
     params = manifest.get("parameters", [])
 
     # --- Compile shaders ---
-    shader_entries = []  # list of (stage, entry_name, spirv_bytes)
+    shader_entries = []  # list of (stage, entry_name, spirv_bytes, samplers, uniforms)
     for tech in techniques:
         for p in tech["passes"]:
             vs = p.get("vertexShader")
             ps = p.get("pixelShader")
             if vs:
                 src = os.path.join(manifest_dir, vs["source"])
-                spirv = compile_hlsl_to_spirv(src, vs["entry"], "vertex")
-                shader_entries.append((SHADER_STAGE_VERTEX, vs["entry"], spirv))
+                vs_samplers = vs.get("samplers", 0)
+                spirv = compile_hlsl_to_spirv(src, vs["entry"], "vertex", vs_samplers)
+                shader_entries.append((SHADER_STAGE_VERTEX, vs["entry"], spirv,
+                    vs_samplers, vs.get("uniforms", 0)))
             if ps:
                 src = os.path.join(manifest_dir, ps["source"])
-                spirv = compile_hlsl_to_spirv(src, ps["entry"], "pixel")
-                shader_entries.append((SHADER_STAGE_PIXEL, ps["entry"], spirv))
+                ps_samplers = ps.get("samplers", 0)
+                spirv = compile_hlsl_to_spirv(src, ps["entry"], "pixel", ps_samplers)
+                shader_entries.append((SHADER_STAGE_PIXEL, ps["entry"], spirv,
+                    ps_samplers, ps.get("uniforms", 0)))
 
     # --- Compute counts ---
     technique_count = len(techniques)
@@ -166,7 +182,7 @@ def build_feb(manifest: dict, manifest_dir: str) -> bytes:
     for param in params:
         strings.add(param["name"])
         strings.add(param.get("semantic", ""))
-    for stage, entry, _ in shader_entries:
+    for stage, entry, _, _, _ in shader_entries:
         strings.add(entry)
 
     string_table_data = strings.data()
@@ -214,7 +230,7 @@ def build_feb(manifest: dict, manifest_dir: str) -> bytes:
     spirv_data_parts = []
     spirv_offsets = []
     current_spirv_off = 0
-    for _, _, spirv in shader_entries:
+    for _, _, spirv, _, _ in shader_entries:
         # Ensure 4-byte alignment
         spirv_data_parts.append(spirv)
         spirv_offsets.append(current_spirv_off)
@@ -267,7 +283,7 @@ def build_feb(manifest: dict, manifest_dir: str) -> bytes:
     # Passes
     # Build shader index map: (stage, entry_name) -> shader array index
     shader_index_map = {}
-    for idx, (stage, entry, _) in enumerate(shader_entries):
+    for idx, (stage, entry, _, _, _) in enumerate(shader_entries):
         shader_index_map[(stage, entry)] = idx
 
     for tech in techniques:
@@ -291,9 +307,9 @@ def build_feb(manifest: dict, manifest_dir: str) -> bytes:
             body.extend(struct.pack("<I", ss_count))
             body.extend(struct.pack("<I", 0))  # reserved
 
-    # Shaders (24 bytes each: 20 bytes of data + 4 bytes extra padding
-    # to match the parser's stride of 24 in FNA3D_LoadEffect)
-    for idx, (stage, entry, spirv) in enumerate(shader_entries):
+    # Shaders (24 bytes each):
+    # stage(1)+pad(3)+entryOff(4)+spirvOff(4)+spirvSize(4)+samplers(4)+uniforms(4)
+    for idx, (stage, entry, spirv, samplers, uniforms) in enumerate(shader_entries):
         entry_off = strings.offsets[entry]
         spirv_data_off = spirv_offsets[idx]
         spirv_data_size = len(spirv)
@@ -303,11 +319,11 @@ def build_feb(manifest: dict, manifest_dir: str) -> bytes:
         body.extend(struct.pack("<I", entry_off))
         body.extend(struct.pack("<I", spirv_data_off))
         body.extend(struct.pack("<I", spirv_data_size))
-        body.extend(struct.pack("<I", 0))  # reserved
-        body.extend(struct.pack("<I", 0))  # extra padding to reach 24 bytes
+        body.extend(struct.pack("<I", samplers))
+        body.extend(struct.pack("<I", uniforms))
 
     # SPIR-V data (already in-order from shader_entries)
-    for _, _, spirv in shader_entries:
+    for _, _, spirv, _, _ in shader_entries:
         body.extend(spirv)
 
     # --- Compute total size from actual bytes ---

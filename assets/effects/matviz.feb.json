@@ -1,0 +1,49 @@
+{
+  "techniques": [
+    {
+      "name": "MatViz",
+      "passes": [
+        {
+          "name": "P0",
+          "vertexShader": {
+            "source": "../shaders/matviz_vs.hlsl",
+            "entry": "VSMain",
+            "samplers": 0,
+            "uniforms": 0
+          },
+          "pixelShader": {
+            "source": "../shaders/matviz_ps.hlsl",
+            "entry": "PSMain",
+            "samplers": 0,
+            "uniforms": 1
+          }
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "name": "MatrixTransform",
+      "type": "MATRIX",
+      "register": 0,
+      "default": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ]
+    }
+  ]
+}

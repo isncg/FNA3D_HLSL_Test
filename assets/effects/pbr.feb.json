@@ -1,0 +1,71 @@
+{
+  "techniques": [
+    {
+      "name": "PbrTechnique",
+      "passes": [
+        {
+          "name": "P0",
+          "vertexShader": {
+            "source": "../shaders/pbr_vs.hlsl",
+            "entry": "VSMain",
+            "samplers": 0,
+            "uniforms": 1
+          },
+          "pixelShader": {
+            "source": "../shaders/pbr_ps.hlsl",
+            "entry": "PSMain",
+            "samplers": 0,
+            "uniforms": 1
+          }
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "name": "WorldViewProj",
+      "type": "MATRIX",
+      "register": 0
+    },
+    {
+      "name": "World",
+      "type": "MATRIX",
+      "register": 4
+    },
+    {
+      "name": "WorldInverseTranspose",
+      "type": "MATRIX",
+      "register": 8
+    },
+    {
+      "name": "EyePosition",
+      "type": "FLOAT3",
+      "register": 11
+    },
+    {
+      "name": "LightDirection",
+      "type": "FLOAT3",
+      "register": 12
+    },
+    {
+      "name": "LightColor",
+      "type": "FLOAT3",
+      "register": 13
+    },
+    {
+      "name": "Albedo",
+      "type": "FLOAT3",
+      "register": 14
+    },
+    {
+      "name": "Metallic",
+      "type": "FLOAT",
+      "register": 15
+    },
+    {
+      "name": "Roughness",
+      "type": "FLOAT",
+      "register": 16
+    }
+  ]
+}

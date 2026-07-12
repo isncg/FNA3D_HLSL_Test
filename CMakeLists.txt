@@ -30,3 +30,81 @@ target_link_libraries(triangle_test
 	FNA3D
 	m
 )
+
+# --- textured_quad_test ---
+add_executable(textured_quad_test
+	src/textured_quad.c
+	src/common.c
+)
+target_include_directories(textured_quad_test PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+target_link_libraries(textured_quad_test
+	SDL3::SDL3
+	FNA3D
+	m
+)
+
+# --- teapot_test ---
+add_executable(teapot_test
+	src/teapot.c
+	src/common.c
+	src/math3d.c
+)
+target_include_directories(teapot_test PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+target_link_libraries(teapot_test
+	SDL3::SDL3
+	FNA3D
+	m
+)
+
+# --- teapot_light_test ---
+add_executable(teapot_light_test
+	src/teapot_light.c
+	src/common.c
+	src/math3d.c
+)
+target_include_directories(teapot_light_test PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+target_link_libraries(teapot_light_test
+	SDL3::SDL3
+	FNA3D
+	m
+)
+
+# --- matviz_test ---
+add_executable(matviz_test
+	src/matviz_test.c
+	src/common.c
+)
+target_include_directories(matviz_test PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+target_link_libraries(matviz_test
+	SDL3::SDL3
+	FNA3D
+	m
+)
+
+# --- teapot_pbr_test ---
+add_executable(teapot_pbr_test
+	src/teapot_pbr.c
+	src/common.c
+	src/math3d.c
+)
+target_include_directories(teapot_pbr_test PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+target_link_libraries(teapot_pbr_test
+	SDL3::SDL3
+	FNA3D
+	m
+)
