@@ -1,0 +1,20 @@
+{
+  "techniques": [
+    {
+      "name": "MainTechnique",
+      "passes": [
+        {
+          "name": "P0",
+          "vertexShader": {
+            "source": "../shaders/triangle_vs.hlsl",
+            "entry": "VSMain"
+          },
+          "pixelShader": {
+            "source": "../shaders/triangle_ps.hlsl",
+            "entry": "PSMain"
+          }
+        }
+      ]
+    }
+  ]
+}
