@@ -37,15 +37,17 @@ int main(int argc, char *argv[])
 	FNA3D_EffectTechnique *technique;
 	float identity[16];
 
-	/* Fullscreen quad: NDC [-1, 1] x [-1, 1], UV [0, 1] x [0, 1] */
+	/* Fullscreen quad: NDC [-1, 1] x [-1, 1]
+	 * UV.y = 0 at top → row 0 = MatrixTransform[0][*] (m11)
+	 * UV.y = 1 at bottom → row 3 = MatrixTransform[3][*] (m44) */
 	Vertex quad[6] = {
-		{-1.0f,  1.0f, 0.0f, 0.0f, 1.0f},
-		{-1.0f, -1.0f, 0.0f, 0.0f, 0.0f},
-		{ 1.0f, -1.0f, 0.0f, 1.0f, 0.0f},
+		{-1.0f,  1.0f, 0.0f, 0.0f, 0.0f},
+		{-1.0f, -1.0f, 0.0f, 0.0f, 1.0f},
+		{ 1.0f, -1.0f, 0.0f, 1.0f, 1.0f},
 
-		{-1.0f,  1.0f, 0.0f, 0.0f, 1.0f},
-		{ 1.0f, -1.0f, 0.0f, 1.0f, 0.0f},
-		{ 1.0f,  1.0f, 0.0f, 1.0f, 1.0f},
+		{-1.0f,  1.0f, 0.0f, 0.0f, 0.0f},
+		{ 1.0f, -1.0f, 0.0f, 1.0f, 1.0f},
+		{ 1.0f,  1.0f, 0.0f, 1.0f, 0.0f},
 	};
 
 	(void) argc;
