@@ -1,6 +1,8 @@
 #define SDL_MAIN_HANDLED
 #include <SDL3/SDL.h>
 #include <FNA3D.h>
+#include <FNA3D_ImGui.h>   /* lifecycle: FNA3D_ImGui_*EXT */
+#include "dcimgui.h"       /* widget API: ImGui_Begin / ImGui_SliderFloat / ... */
 
 #include "common.h"
 #include "math3d.h"
@@ -191,6 +193,9 @@ int main(int argc, char *argv[])
 	{ SDL_Log("FNA3D_CreateDevice failed"); SDL_DestroyWindow(window); SDL_free(teapotVerts); SDL_Quit(); return 1; }
 	FNA3D_SetRenderTargets(device, NULL, 0, NULL, FNA3D_DEPTHFORMAT_D16, 0);
 
+	/* ---- Init Dear ImGui overlay (drawn automatically in SwapBuffers) ---- */
+	FNA3D_ImGui_InitEXT(device);
+
 	/* ---- Load GBuffer effect ---- */
 	effectBytes = load_file("../assets/effects/gbuffer.feb", &effectLen);
 	if (effectBytes == NULL)
@@ -311,7 +316,7 @@ int main(int argc, char *argv[])
 		(float) fbWidth / (float) fbHeight, 0.1f, 100.0f);
 
 	SDL_Log("SSAO Test — Left-drag: orbit camera | Scroll: zoom");
-	SDL_Log("Q/A: radius +/-  |  W/S: intensity +/-");
+	SDL_Log("Adjust radius/bias/intensity via the ImGui panel (or Q/A/W/S keys)");
 	SDL_Log("SSAO: radius=%.2f  bias=%.3f  intensity=%.2f",
 		ssaoRadius, ssaoBias, ssaoIntensity);
 
@@ -328,7 +333,8 @@ int main(int argc, char *argv[])
 			case SDL_EVENT_QUIT:
 				running = 0; break;
 			case SDL_EVENT_MOUSE_BUTTON_DOWN:
-				if (evt.button.button == SDL_BUTTON_LEFT) camDragging = 1;
+				if (evt.button.button == SDL_BUTTON_LEFT &&
+					!ImGui_GetIO()->WantCaptureMouse) camDragging = 1;
 				break;
 			case SDL_EVENT_MOUSE_BUTTON_UP:
 				if (evt.button.button == SDL_BUTTON_LEFT) camDragging = 0;
@@ -363,6 +369,14 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+
+		/* ---- ImGui panel: live-tune SSAO parameters ---- */
+		FNA3D_ImGui_NewFrameEXT(device);
+		ImGui_Begin("SSAO Parameters", NULL, 0);
+		ImGui_SliderFloat("Radius",    &ssaoRadius,    0.1f, 3.0f);
+		ImGui_SliderFloat("Bias",      &ssaoBias,      0.0f, 0.1f);
+		ImGui_SliderFloat("Intensity", &ssaoIntensity, 0.0f, 3.0f);
+		ImGui_End();
 
 		/* ---- Compute matrices ---- */
 		cosAlt = cosf(altitude);
@@ -484,6 +498,7 @@ int main(int argc, char *argv[])
 	FNA3D_AddDisposeVertexBuffer(device, vbQuad);
 	FNA3D_AddDisposeEffect(device, gbufferEffect);
 	FNA3D_AddDisposeEffect(device, ssaoEffect);
+	FNA3D_ImGui_ShutdownEXT(device);
 	FNA3D_DestroyDevice(device);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
