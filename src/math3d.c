@@ -123,3 +123,23 @@ void mat4_lookat_lh(Mat4 *out, Vec3 eye, Vec3 target, Vec3 up)
 	out->m43 = -vec3_dot(zaxis, eye);
 	out->m44 = 1.0f;
 }
+
+void mat4_to_colmajor(float out[16], const Mat4 *m)
+{
+	/* ImGuizmo's matrix_t uses C float m[4][4] which is row-major — identical
+	 * to our Mat4 byte layout. Direct memcpy, no transpose needed.
+	 * (Despite the name "colmajor", this is just a float[16] copy for ImGuizmo.) */
+	const float *src = &m->m11;
+	out[ 0] = src[ 0]; out[ 1] = src[ 1]; out[ 2] = src[ 2]; out[ 3] = src[ 3];
+	out[ 4] = src[ 4]; out[ 5] = src[ 5]; out[ 6] = src[ 6]; out[ 7] = src[ 7];
+	out[ 8] = src[ 8]; out[ 9] = src[ 9]; out[10] = src[10]; out[11] = src[11];
+	out[12] = src[12]; out[13] = src[13]; out[14] = src[14]; out[15] = src[15];
+}
+
+void mat4_from_colmajor(Mat4 *m, const float in[16])
+{
+	m->m11 = in[ 0]; m->m12 = in[ 1]; m->m13 = in[ 2]; m->m14 = in[ 3];
+	m->m21 = in[ 4]; m->m22 = in[ 5]; m->m23 = in[ 6]; m->m24 = in[ 7];
+	m->m31 = in[ 8]; m->m32 = in[ 9]; m->m33 = in[10]; m->m34 = in[11];
+	m->m41 = in[12]; m->m42 = in[13]; m->m43 = in[14]; m->m44 = in[15];
+}

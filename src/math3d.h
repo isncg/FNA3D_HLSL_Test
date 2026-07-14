@@ -38,4 +38,12 @@ void mat4_mul(Mat4 *out, const Mat4 *a, const Mat4 *b);
 void mat4_perspective(Mat4 *out, float fovY, float aspect, float zn, float zf);
 void mat4_lookat_lh(Mat4 *out, Vec3 eye, Vec3 target, Vec3 up);
 
+/* Convert between row-major Mat4 and column-major float[16].
+ * mat4_to_colmajor:  Mat4 (row-major)    -> float[16] (column-major)
+ * mat4_from_colmajor: float[16] (column-major) -> Mat4 (row-major)
+ * Both are equivalent to transpose.
+ */
+void mat4_to_colmajor(float out[16], const Mat4 *m);
+void mat4_from_colmajor(Mat4 *m, const float in[16]);
+
 #endif /* MATH3D_H */

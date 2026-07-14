@@ -5,6 +5,10 @@
 #include "common.h"
 #include "math3d.h"
 
+#include <FNA3D_ImGui.h>
+#include "dcimgui.h"
+#include <FNA3D_ImGuizmo.h>
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -199,6 +203,9 @@ int main(int argc, char *argv[])
 	}
 	FNA3D_SetRenderTargets(device, NULL, 0, NULL, FNA3D_DEPTHFORMAT_D16, 0);
 
+	/* Initialize Dear ImGui (matching ssao_test.c pattern) */
+	FNA3D_ImGui_InitEXT(device);
+
 	/* Load effect */
 	effect_bytes = load_file("../assets/effects/normal.feb", &effect_len);
 	if (effect_bytes == NULL)
@@ -263,7 +270,7 @@ int main(int argc, char *argv[])
 	mat4_perspective(&proj, MATH3D_PI / 4.0f,
 		(float) pp.backBufferWidth / (float) pp.backBufferHeight, 0.1f, 100.0f);
 
-	SDL_Log("Left-drag: orbit camera | Scroll: zoom");
+	SDL_Log("Left-drag: orbit camera | Scroll: zoom | Gizmo arrows: drag teapot");
 
 	while (running)
 	{
@@ -277,10 +284,14 @@ int main(int argc, char *argv[])
 			case SDL_EVENT_QUIT:
 				running = 0; break;
 			case SDL_EVENT_MOUSE_BUTTON_DOWN:
-				if (evt.button.button == SDL_BUTTON_LEFT) dragging = 1;
+				if (evt.button.button == SDL_BUTTON_LEFT &&
+					!ImGui_GetIO()->WantCaptureMouse &&
+					!FNA3D_ImGuizmo_IsUsingEXT(device))
+					dragging = 1;
 				break;
 			case SDL_EVENT_MOUSE_BUTTON_UP:
-				if (evt.button.button == SDL_BUTTON_LEFT) dragging = 0;
+				if (evt.button.button == SDL_BUTTON_LEFT)
+					dragging = 0;
 				break;
 			case SDL_EVENT_MOUSE_MOTION:
 				if (dragging)
@@ -297,6 +308,8 @@ int main(int argc, char *argv[])
 				if (radius < 3.0f) radius = 3.0f;
 				if (radius > 40.0f) radius = 40.0f;
 				break;
+			default:
+				break;
 			}
 		}
 
@@ -307,6 +320,53 @@ int main(int argc, char *argv[])
 
 		mat4_lookat_lh(&view, eye, target, (Vec3){0.0f, 1.0f, 0.0f});
 		mat4_mul(&viewproj, &view, &proj);
+
+		/* ---- ImGui + ImGuizmo frame ---- */
+		FNA3D_ImGui_NewFrameEXT(device);
+
+		/* ImGuizmo::BeginFrame() creates its own internal "gizmo"
+		 * window (full-viewport, NoInputs).  No custom window needed. */
+		{
+			float view_cm[16], proj_cm[16], world_cm[16];
+			mat4_to_colmajor(view_cm, &view);
+			mat4_to_colmajor(proj_cm, &proj);
+			mat4_to_colmajor(world_cm, &world);
+
+			FNA3D_ImGuizmo_BeginFrameEXT(device);
+			FNA3D_ImGuizmo_SetRectEXT(device, 0.0f, 0.0f,
+				(float) pp.backBufferWidth,
+				(float) pp.backBufferHeight);
+			FNA3D_ImGuizmo_ManipulateEXT(device,
+				view_cm, proj_cm,
+				FNA3D_IMGUIZMO_TRANSLATE,
+				FNA3D_IMGUIZMO_WORLD, world_cm);
+
+			mat4_from_colmajor(&world, world_cm);
+		}
+
+		/* Info panel */
+		{
+			float teapot_pos[3];
+			teapot_pos[0] = world.m41;
+			teapot_pos[1] = world.m42;
+			teapot_pos[2] = world.m43;
+
+			ImGui_Begin("Teapot Transform", NULL, 0);
+			ImGui_SliderFloat3("Position", teapot_pos, -10.0f, 10.0f);
+			if (ImGui_Button("Reset Position"))
+			{
+				mat4_identity(&world);
+				teapot_pos[0] = 0.0f;
+				teapot_pos[1] = 0.0f;
+				teapot_pos[2] = 0.0f;
+			}
+			ImGui_End();
+
+			world.m41 = teapot_pos[0];
+			world.m42 = teapot_pos[1];
+			world.m43 = teapot_pos[2];
+		}
+
 		mat4_mul(&worldviewproj, &world, &viewproj);
 		mat4_transpose(&worldviewproj_t, &worldviewproj);
 
@@ -325,6 +385,7 @@ int main(int argc, char *argv[])
 
 	FNA3D_AddDisposeVertexBuffer(device, vb);
 	FNA3D_AddDisposeEffect(device, effect);
+	FNA3D_ImGui_ShutdownEXT(device);
 	FNA3D_DestroyDevice(device);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
