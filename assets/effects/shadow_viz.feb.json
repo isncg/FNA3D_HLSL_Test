@@ -1,0 +1,25 @@
+{
+  "techniques": [
+    {
+      "name": "ShadowViz",
+      "passes": [
+        {
+          "name": "P0",
+          "vertexShader": {
+            "source": "../shaders/ssao_vs.hlsl",
+            "entry": "VSMain",
+            "samplers": 0,
+            "uniforms": 0
+          },
+          "pixelShader": {
+            "source": "../shaders/shadow_viz_ps.hlsl",
+            "entry": "PSMain",
+            "samplers": 1,
+            "uniforms": 0
+          }
+        }
+      ]
+    }
+  ],
+  "parameters": []
+}

@@ -1,0 +1,53 @@
+{
+  "techniques": [
+    {
+      "name": "ShadowScene",
+      "passes": [
+        {
+          "name": "P0",
+          "vertexShader": {
+            "source": "../shaders/shadow_scene_vs.hlsl",
+            "entry": "VSMain",
+            "samplers": 0,
+            "uniforms": 1
+          },
+          "pixelShader": {
+            "source": "../shaders/shadow_scene_ps.hlsl",
+            "entry": "PSMain",
+            "samplers": 1,
+            "uniforms": 1
+          }
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "name": "ViewProj",
+      "type": "MATRIX",
+      "register": 0
+    },
+    {
+      "name": "LightViewProj",
+      "type": "MATRIX",
+      "register": 4
+    },
+    {
+      "name": "DirToLight",
+      "type": "FLOAT3",
+      "register": 8
+    },
+    {
+      "name": "ShadowParams",
+      "type": "FLOAT4",
+      "register": 9,
+      "default": [0.002, 0.0009765625, 1.0, 0.85]
+    },
+    {
+      "name": "DiffuseColor",
+      "type": "FLOAT4",
+      "register": 10,
+      "default": [1.0, 0.85, 0.7, 1.0]
+    }
+  ]
+}

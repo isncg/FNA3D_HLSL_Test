@@ -13,6 +13,9 @@ python3 tools/feb_builder.py assets/effects/pbr.feb.json
 python3 tools/feb_builder.py assets/effects/matviz.feb.json
 python3 tools/feb_builder.py assets/effects/gbuffer.feb.json
 python3 tools/feb_builder.py assets/effects/ssao.feb.json
+python3 tools/feb_builder.py assets/effects/shadow_depth.feb.json
+python3 tools/feb_builder.py assets/effects/shadow_scene.feb.json
+python3 tools/feb_builder.py assets/effects/shadow_viz.feb.json
 
 echo "=== Configuring CMake ==="
 cmake -B build_linux -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug

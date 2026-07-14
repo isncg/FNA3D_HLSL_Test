@@ -36,6 +36,7 @@ void mat4_identity(Mat4 *out);
 void mat4_transpose(Mat4 *out, const Mat4 *in);
 void mat4_mul(Mat4 *out, const Mat4 *a, const Mat4 *b);
 void mat4_perspective(Mat4 *out, float fovY, float aspect, float zn, float zf);
+void mat4_ortho_lh(Mat4 *out, float width, float height, float zn, float zf);
 void mat4_lookat_lh(Mat4 *out, Vec3 eye, Vec3 target, Vec3 up);
 
 /* Convert between row-major Mat4 and column-major float[16].

@@ -124,3 +124,19 @@ target_link_libraries(teapot_pbr_test
 	FNA3D
 	m
 )
+
+# --- shadow_test ---
+add_executable(shadow_test
+	src/shadow_test.c
+	src/common.c
+	src/math3d.c
+)
+target_include_directories(shadow_test PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+target_link_libraries(shadow_test
+	SDL3::SDL3
+	FNA3D
+	m
+)

@@ -1,0 +1,31 @@
+{
+  "techniques": [
+    {
+      "name": "ShadowDepth",
+      "passes": [
+        {
+          "name": "P0",
+          "vertexShader": {
+            "source": "../shaders/shadow_depth_vs.hlsl",
+            "entry": "VSMain",
+            "samplers": 0,
+            "uniforms": 1
+          },
+          "pixelShader": {
+            "source": "../shaders/shadow_depth_ps.hlsl",
+            "entry": "PSMain",
+            "samplers": 0,
+            "uniforms": 0
+          }
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "name": "LightViewProj",
+      "type": "MATRIX",
+      "register": 0
+    }
+  ]
+}

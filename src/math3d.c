@@ -109,6 +109,14 @@ void mat4_perspective(Mat4 *out, float fovY, float aspect, float zn, float zf)
 	out->m41 = 0.0f;   out->m42 = 0.0f; out->m43 = -(zn * zf) / (zf - zn); out->m44 = 0.0f;
 }
 
+void mat4_ortho_lh(Mat4 *out, float width, float height, float zn, float zf)
+{
+	out->m11 = 2.0f / width; out->m12 = 0.0f;          out->m13 = 0.0f;              out->m14 = 0.0f;
+	out->m21 = 0.0f;         out->m22 = 2.0f / height; out->m23 = 0.0f;              out->m24 = 0.0f;
+	out->m31 = 0.0f;         out->m32 = 0.0f;          out->m33 = 1.0f / (zf - zn);  out->m34 = 0.0f;
+	out->m41 = 0.0f;         out->m42 = 0.0f;          out->m43 = -zn / (zf - zn);   out->m44 = 1.0f;
+}
+
 void mat4_lookat_lh(Mat4 *out, Vec3 eye, Vec3 target, Vec3 up)
 {
 	Vec3 zaxis = vec3_normalize(vec3_sub(target, eye));
