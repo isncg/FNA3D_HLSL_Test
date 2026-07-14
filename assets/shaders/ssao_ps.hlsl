@@ -85,8 +85,13 @@ float4 PSMain(PS_INPUT input) : SV_TARGET
 
     for (int i = 0; i < 16; i++)
     {
+        /* Scale samples so they fill the hemisphere volume,
+           biased toward the origin for a smoother falloff */
+        float scale = (float) i / 16.0;
+        scale = lerp(0.1, 1.0, scale * scale);
+
         /* Rotate hemisphere sample in tangent space */
-        float3 sampleDir = gSamples[i];
+        float3 sampleDir = gSamples[i] * scale;
         float3 sampleTan;
         sampleTan.x = sampleDir.x * rot.x + sampleDir.y * rot.y;
         sampleTan.y = sampleDir.x * -rot.y + sampleDir.y * rot.x;
@@ -112,22 +117,13 @@ float4 PSMain(PS_INPUT input) : SV_TARGET
         /* Sample depth at projected position */
         float sampleDepth = DepthTex.Sample(DepthSampler, sampleUV);
 
-        /* Reconstruct full 3D view-space position at the sample UV */
-        float2 sampleNDC = float2(sampleUV.x * 2.0 - 1.0, 1.0 - sampleUV.y * 2.0);
-        float3 sampleViewPos;
-        sampleViewPos.x = sampleNDC.x * sampleDepth / Projection._11;
-        sampleViewPos.y = sampleNDC.y * sampleDepth / Projection._22;
-        sampleViewPos.z = sampleDepth;
+        /* Range check: fade out contributions from geometry far
+           outside the sampling radius (avoids halos) */
+        float rangeCheck = smoothstep(0.0, 1.0, radius / max(abs(viewZ - sampleDepth), 1e-4));
 
-        /* Range check: 3D distance between surface point and sample geometry */
-        float rangeCheck = length(sampleViewPos - viewPos) < radius ? 1.0 : 0.0;
-
-        /* Heights above the surface tangent plane (signed by normal direction) */
-        float geomHeight  = dot(sampleViewPos - viewPos, N);
-        float probeHeight = dot(samplePos - viewPos, N);
-
-        /* Occlusion: geometry is between the surface plane and the probe */
-        occlusion += (geomHeight > SSAO_BIAS && geomHeight < probeHeight ? 1.0 : 0.0) * rangeCheck;
+        /* Occlusion: visible geometry at the probe's pixel is
+           closer to the camera than the probe itself */
+        occlusion += (sampleDepth < samplePos.z - SSAO_BIAS ? 1.0 : 0.0) * rangeCheck;
     }
 
     occlusion /= 16.0;
