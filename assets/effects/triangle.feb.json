@@ -7,15 +7,11 @@
           "name": "P0",
           "vertexShader": {
             "source": "../shaders/triangle_vs.hlsl",
-            "entry": "VSMain",
-            "samplers": 0,
-            "uniforms": 0
+            "entry": "VSMain"
           },
           "pixelShader": {
             "source": "../shaders/triangle_ps.hlsl",
-            "entry": "PSMain",
-            "samplers": 0,
-            "uniforms": 0
+            "entry": "PSMain"
           }
         }
       ]

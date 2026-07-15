@@ -8,6 +8,7 @@ FNA3D_LoadEffect() in FNA3D_HLSL/src/FNA3D_Effect.c.
 
 import json
 import os
+import re
 import struct
 import subprocess
 import sys
@@ -38,8 +39,32 @@ FEB_VERSION = 1
 HEADER_SIZE = 64  # 16 * uint32
 
 
-def compile_hlsl_to_spirv(source_path: str, entry_point: str, stage: str,
-                         samplers: int = 0) -> bytes:
+def scan_hlsl_registers(source_text: str) -> tuple[set[int], set[int]]:
+    """Collect texture (tN) and sampler (sN) register indices from HLSL source.
+
+    Used to emit -fvk-bind-register flags: DXC requires that once any
+    -fvk-bind-register is passed, EVERY register used by the entry point is
+    covered, so this scan must see all declarations. Extra flags for
+    registers unused by the entry point are harmless.
+    """
+    # Strip comments so commented-out declarations don't count
+    text = re.sub(r"//[^\n]*", "", source_text)
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
+
+    # Resource arrays span multiple registers but produce a single binding;
+    # reflection would undercount them. None are used today.
+    if re.search(r"\[\s*\d+\s*\]\s*:\s*register\(\s*[ts]", text):
+        print("WARNING: texture/sampler array detected; reflected sampler "
+              "count may be wrong", file=sys.stderr)
+
+    t_indices: set[int] = set()
+    s_indices: set[int] = set()
+    for kind, idx in re.findall(r"register\(\s*([ts])(\d+)", text):
+        (t_indices if kind == "t" else s_indices).add(int(idx))
+    return t_indices, s_indices
+
+
+def compile_hlsl_to_spirv(source_path: str, entry_point: str, stage: str) -> bytes:
     """Compile an HLSL source file to SPIR-V using DXC."""
     if stage == "vertex":
         profile = "vs_6_0"
@@ -80,7 +105,12 @@ def compile_hlsl_to_spirv(source_path: str, entry_point: str, stage: str,
     # space=0 is the default register space in HLSL.
     # Each HLSL register(tN)/register(sN) pair is a combined image sampler
     # at Set<s> Binding<N> in the generated SPIR-V.
-    for i in range(samplers):
+    # Registers are discovered by scanning the source; both the tN and sN
+    # flag are emitted per index in case a texture lacks a matching sampler
+    # at that slot (or vice versa).
+    with open(source_path, "r") as f:
+        t_indices, s_indices = scan_hlsl_registers(f.read())
+    for i in sorted(t_indices | s_indices):
         cmd.extend(["-fvk-bind-register", f"t{i}", "0", str(i), sampler_set])
         cmd.extend(["-fvk-bind-register", f"s{i}", "0", str(i), sampler_set])
 
@@ -101,6 +131,82 @@ def compile_hlsl_to_spirv(source_path: str, entry_point: str, stage: str,
     os.remove(output_path)
 
     return spirv
+
+
+# SPIR-V constants used by reflect_spirv_counts
+SPIRV_MAGIC = 0x07230203
+OP_DECORATE = 71
+OP_VARIABLE = 59
+DECORATION_BINDING = 33
+DECORATION_DESCRIPTOR_SET = 34
+STORAGE_CLASS_UNIFORM_CONSTANT = 0  # textures/samplers
+STORAGE_CLASS_UNIFORM = 2           # uniform buffers ($Globals)
+
+
+def reflect_spirv_counts(spirv: bytes, stage: str) -> tuple[int, int]:
+    """Reflect (samplers, uniforms) counts from a SPIR-V binary.
+
+    Counts only what survives DXC's dead-code elimination, which is exactly
+    what SDL_CreateGPUShader needs in num_samplers/num_uniform_buffers.
+    Texture (tN) and sampler (sN) share Binding N, so sampler slots are
+    counted as max(binding)+1 in the stage's sampler descriptor set.
+    """
+    if len(spirv) < 20 or len(spirv) % 4 != 0:
+        raise ValueError("Invalid SPIR-V binary size")
+    words = struct.unpack(f"<{len(spirv) // 4}I", spirv)
+    if words[0] != SPIRV_MAGIC:
+        raise ValueError("Invalid SPIR-V magic")
+
+    # SDL_GPU fixed descriptor set convention (see compile_hlsl_to_spirv)
+    sampler_set, globals_set = (0, 1) if stage == "vertex" else (2, 3)
+
+    decorations: dict[int, dict[int, int]] = {}  # id -> {decoration: value}
+    variables: list[tuple[int, int]] = []        # (result_id, storage_class)
+
+    pos = 5  # skip 5-word header
+    while pos < len(words):
+        word_count = words[pos] >> 16
+        opcode = words[pos] & 0xFFFF
+        if word_count == 0:
+            raise ValueError(f"Malformed SPIR-V instruction at word {pos}")
+        if opcode == OP_DECORATE and word_count >= 4:
+            target, decoration, value = words[pos + 1], words[pos + 2], words[pos + 3]
+            if decoration in (DECORATION_BINDING, DECORATION_DESCRIPTOR_SET):
+                decorations.setdefault(target, {})[decoration] = value
+        elif opcode == OP_VARIABLE and word_count >= 4:
+            variables.append((words[pos + 2], words[pos + 3]))
+        pos += word_count
+
+    sampler_bindings: set[int] = set()
+    uniform_bindings: set[tuple[int, int]] = set()
+    for result_id, storage_class in variables:
+        deco = decorations.get(result_id)
+        if deco is None or DECORATION_DESCRIPTOR_SET not in deco:
+            continue  # not a resource (Input/Output/Function/etc.)
+        dset = deco[DECORATION_DESCRIPTOR_SET]
+        binding = deco.get(DECORATION_BINDING, 0)
+        if storage_class == STORAGE_CLASS_UNIFORM_CONSTANT:
+            if dset != sampler_set:
+                raise ValueError(
+                    f"Texture/sampler at DescriptorSet {dset}, expected "
+                    f"{sampler_set} for {stage} stage (missing "
+                    f"-fvk-bind-register?)")
+            sampler_bindings.add(binding)
+        elif storage_class == STORAGE_CLASS_UNIFORM:
+            if dset != globals_set:
+                raise ValueError(
+                    f"Uniform buffer at DescriptorSet {dset}, expected "
+                    f"{globals_set} for {stage} stage")
+            uniform_bindings.add((dset, binding))
+
+    samplers = max(sampler_bindings) + 1 if sampler_bindings else 0
+    if sampler_bindings and sampler_bindings != set(range(samplers)):
+        print(f"WARNING: sparse sampler bindings {sorted(sampler_bindings)}; "
+              f"runtime binds slots 0..{samplers - 1} contiguously",
+              file=sys.stderr)
+    uniforms = len(uniform_bindings)
+
+    return samplers, uniforms
 
 
 class StringTable:
@@ -163,6 +269,17 @@ def build_feb(manifest: dict, manifest_dir: str) -> bytes:
     params = manifest.get("parameters", [])
 
     # --- Compile shaders ---
+    # samplers/uniforms counts are reflected from the compiled SPIR-V; any
+    # leftover manual counts in the manifest are only checked for mismatch.
+    def check_manifest_counts(shader_json, stage_name, samplers, uniforms):
+        for key, reflected in (("samplers", samplers), ("uniforms", uniforms)):
+            manual = shader_json.get(key)
+            if manual is not None and manual != reflected:
+                print(f"WARNING: {shader_json['source']}:{shader_json['entry']} "
+                      f"({stage_name}) manifest says {key}={manual}, "
+                      f"reflection says {reflected}; using {reflected}",
+                      file=sys.stderr)
+
     shader_entries = []  # list of (stage, entry_name, spirv_bytes, samplers, uniforms)
     for tech in techniques:
         for p in tech["passes"]:
@@ -170,16 +287,18 @@ def build_feb(manifest: dict, manifest_dir: str) -> bytes:
             ps = p.get("pixelShader")
             if vs:
                 src = os.path.join(manifest_dir, vs["source"])
-                vs_samplers = vs.get("samplers", 0)
-                spirv = compile_hlsl_to_spirv(src, vs["entry"], "vertex", vs_samplers)
+                spirv = compile_hlsl_to_spirv(src, vs["entry"], "vertex")
+                samplers, uniforms = reflect_spirv_counts(spirv, "vertex")
+                check_manifest_counts(vs, "vertex", samplers, uniforms)
                 shader_entries.append((SHADER_STAGE_VERTEX, vs["entry"], spirv,
-                    vs_samplers, vs.get("uniforms", 0)))
+                    samplers, uniforms))
             if ps:
                 src = os.path.join(manifest_dir, ps["source"])
-                ps_samplers = ps.get("samplers", 0)
-                spirv = compile_hlsl_to_spirv(src, ps["entry"], "pixel", ps_samplers)
+                spirv = compile_hlsl_to_spirv(src, ps["entry"], "pixel")
+                samplers, uniforms = reflect_spirv_counts(spirv, "pixel")
+                check_manifest_counts(ps, "pixel", samplers, uniforms)
                 shader_entries.append((SHADER_STAGE_PIXEL, ps["entry"], spirv,
-                    ps_samplers, ps.get("uniforms", 0)))
+                    samplers, uniforms))
 
     # --- Compute counts ---
     technique_count = len(techniques)
@@ -234,7 +353,7 @@ def build_feb(manifest: dict, manifest_dir: str) -> bytes:
 
     offset += pass_section_size
     shader_offset = offset
-    # Each shader: stage(1) + pad(3) + entryOff(4) + spirvOff(4) + spirvSize(4) + reserved(4) = 24
+    # Each shader: stage(1) + pad(3) + entryOff(4) + spirvOff(4) + spirvSize(4) + samplers(4) + uniforms(4) = 24
     shader_section_size = shader_count * 24
 
     offset += shader_section_size

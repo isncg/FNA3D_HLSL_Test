@@ -7,15 +7,11 @@
           "name": "P0",
           "vertexShader": {
             "source": "../shaders/shadow_depth_vs.hlsl",
-            "entry": "VSMain",
-            "samplers": 0,
-            "uniforms": 1
+            "entry": "VSMain"
           },
           "pixelShader": {
             "source": "../shaders/shadow_depth_ps.hlsl",
-            "entry": "PSMain",
-            "samplers": 0,
-            "uniforms": 0
+            "entry": "PSMain"
           }
         }
       ]

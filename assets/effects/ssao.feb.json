@@ -7,15 +7,11 @@
           "name": "P0",
           "vertexShader": {
             "source": "../shaders/ssao_vs.hlsl",
-            "entry": "VSMain",
-            "samplers": 0,
-            "uniforms": 0
+            "entry": "VSMain"
           },
           "pixelShader": {
             "source": "../shaders/ssao_ps.hlsl",
-            "entry": "PSMain",
-            "samplers": 2,
-            "uniforms": 1
+            "entry": "PSMain"
           }
         }
       ]
