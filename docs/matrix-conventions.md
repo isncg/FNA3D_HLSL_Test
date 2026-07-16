@@ -160,9 +160,88 @@ float4   Color    : register(c8);  // 占用 c8（1 个 float4）
 
 ---
 
-## 5. 其他相关约定陷阱
+## 5. 深入原理：GPU 端的矩阵存储与计算
 
-### 5.1 COLOR 字节顺序 — BGRA
+本节解释"列主序"约定背后的机制——它写在哪里、GPU 如何执行矩阵乘法、为什么 HLSL 默认选择列主序。理解这些有助于判断哪些环节可以改、哪些不能改。
+
+### 5.1 显存本身没有"主序"——主序是读取约定
+
+VRAM 中的 uniform/constant buffer 只是一段裸字节，驱动把上传的数据原封不动放进去。GPU 硬件也没有原生的"矩阵类型"——所谓 `float4x4`，在 buffer 里就是连续的 4 个 float4。
+
+行主序还是列主序，取决于**编译器生成的着色器代码用什么规则解释这些字节**（即 `m[i][j]` 映射到哪个字节偏移）。这个规则在编译期固化：
+
+| 路线 | 约定写在哪里 |
+|------|-------------|
+| D3D (DXBC/DXIL) | cbuffer 打包规则，默认 `column_major`，可用 `row_major` 关键字或 `-Zpr` 翻转 |
+| Vulkan (SPIR-V) | 矩阵成员的 `RowMajor`/`ColMajor` 装饰 + `MatrixStride 16`，驱动按装饰生成取址代码 |
+
+所以"上传前转置"改变的不是矩阵本身，而是让 C 端字节布局符合着色器端固化的读取约定。
+
+### 5.2 cbuffer 打包规则
+
+HLSL constant buffer 以 16 字节（一个 float4 寄存器）为打包单位：
+
+- 每个 `register(cN)` 槽位 = 一个 float4（16 字节）
+- 任何变量不得跨越 float4 边界，跨越则整体推到下一个寄存器
+- `float4x4` 占 4 个连续寄存器；默认列主序下**每个寄存器存一列**
+- `float4x3`（列主序）占 3 个寄存器；`float3x3` 每列不足 16 字节但仍各占一个完整寄存器（3 个寄存器，每个浪费 4 字节）
+- 数组元素各自对齐到 16 字节边界，即使元素是 `float`
+
+```hlsl
+float4x4 World    : register(c0);  // c0=col0, c1=col1, c2=col2, c3=col3
+float4x4 ViewProj : register(c4);  // c4-c7
+float4   Color    : register(c8);  // c8
+```
+
+这也是 FEB manifest 中 `"register": N` 与矩阵占 4 个槽位的由来。
+
+### 5.3 mul(v, M) 编译成什么指令
+
+GPU 没有"矩阵乘法指令"（张量核心与顶点变换无关），`mul(v, M)` 被展开为向量点乘/乘加序列。存储主序决定展开形态：
+
+**列主序存储（HLSL 默认）** — 每个寄存器是一列，输出分量 = v 点乘一列：
+
+```
+p'.x = dp4(v, c0)   // dot(v, col0)
+p'.y = dp4(v, c1)
+p'.z = dp4(v, c2)
+p'.w = dp4(v, c3)
+// 4 条 dp4，互相独立，无依赖链
+```
+
+**行主序存储** — 每个寄存器是一行，需要按分量展开成乘加链：
+
+```
+tmp  = v.xxxx * r0          // mul
+tmp += v.yyyy * r1          // mad
+tmp += v.zzzz * r2          // mad
+p'   = tmp + v.wwww * r3    // mad
+// 1 mul + 3 mad，串行依赖链
+```
+
+两种形态都是 4 条指令，但在早期 vec4 向量 ISA（SM 1.x-3.x 时代的 VLIW/向量硬件）上，dp4 版本无依赖链、指令级并行更好——这是 HLSL 默认列主序打包的历史原因。**现代 GPU 是标量 SIMT 架构**，两种形态最终都编译成约 16 条标量 FMA，实际性能差异基本消失，但默认约定沿袭了下来。
+
+### 5.4 DXC → SPIR-V：装饰名是"反的"
+
+用 `spirv-dis` 反汇编 DXC 输出时会看到一个反直觉现象：
+
+| HLSL 声明 | SPIR-V 装饰 |
+|-----------|------------|
+| `column_major`（默认 / `-Zpc`） | `RowMajor` |
+| `row_major`（`-Zpr`） | `ColMajor` |
+
+这是**已知且正确**的行为：HLSL 与 SPIR-V/GLSL 的矩阵逻辑约定互为转置（HLSL 按行索引、向量在左 `mul(v, M)`；SPIR-V 按列向量组织、向量在右 `M * v`），DXC 通过翻转装饰名来保持**字节布局不变**。装饰名反了，buffer 中的字节顺序仍然是 HLSL 语义下的列主序——这就是 2.4 节"没有额外转置层"的原因。排查 SPIR-V 反汇编时不要被装饰名误导。
+
+参考资料：
+- [glslang: column_major 限定符在 SPIR-V 中显示为 RowMajor 装饰](https://chromium.googlesource.com/external/github.com/google/glslang/+/6a264bed88afbd8a452956915fc582ff2aae3a56)
+- [ShaderConductor #41 — packMatricesInRowMajor 语义相反](https://github.com/microsoft/ShaderConductor/issues/41)
+- [Vulkan-Guide PR #244 — HLSL/GLSL 着色器语言映射](https://github.com/KhronosGroup/Vulkan-Guide/pull/244)
+
+---
+
+## 6. 其他相关约定陷阱
+
+### 6.1 COLOR 字节顺序 — BGRA
 
 ```c
 // XNA/FNA 约定：COLOR 格式使用 BGRA 字节顺序
@@ -173,7 +252,7 @@ typedef struct Vertex {
 } Vertex;
 ```
 
-### 5.2 DXC 顶点属性 Location
+### 6.2 DXC 顶点属性 Location
 
 DXC 按 HLSL 结构体中**字段声明顺序**分配 `location` (0, 1, 2...)，**不是** `usage*16+index` 公式。
 
@@ -197,7 +276,7 @@ elements[2].vertexElementUsage = FNA3D_VERTEXELEMENTUSAGE_TEXTURECOORDINATE; // 
 
 ---
 
-## 6. 快速检查清单
+## 7. 快速检查清单
 
 开发新的 Effect / Test 时，检查以下几点：
 
