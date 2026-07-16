@@ -1,0 +1,40 @@
+{
+  "techniques": [
+    {
+      "name": "AlphaTestEffect",
+      "passes": [
+        {
+          "name": "P0",
+          "vertexShader": {
+            "source": "../shaders/alpha_test_vs.hlsl",
+            "entry": "VSMain"
+          },
+          "pixelShader": {
+            "source": "../shaders/alpha_test_ps.hlsl",
+            "entry": "PSMain"
+          }
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "name": "WorldViewProj",
+      "type": "MATRIX",
+      "register": 0,
+      "default": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]
+    },
+    {
+      "name": "DiffuseColor",
+      "type": "FLOAT4",
+      "register": 4,
+      "default": [1,1,1,1]
+    },
+    {
+      "name": "AlphaTest",
+      "type": "FLOAT4",
+      "register": 5,
+      "default": [0.5, 0.01, 0, -1]
+    }
+  ]
+}

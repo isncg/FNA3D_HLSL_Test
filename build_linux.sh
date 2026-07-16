@@ -16,6 +16,12 @@ python3 tools/feb_builder.py assets/effects/ssao.feb.json
 python3 tools/feb_builder.py assets/effects/shadow_depth.feb.json
 python3 tools/feb_builder.py assets/effects/shadow_scene.feb.json
 python3 tools/feb_builder.py assets/effects/shadow_viz.feb.json
+python3 tools/feb_builder.py assets/effects/alpha_test.feb.json
+python3 tools/feb_builder.py assets/effects/basic_effect.feb.json
+python3 tools/feb_builder.py assets/effects/dual_texture.feb.json
+python3 tools/feb_builder.py assets/effects/env_map.feb.json
+python3 tools/feb_builder.py assets/effects/skinned.feb.json
+python3 tools/feb_builder.py assets/effects/yuv_to_rgba.feb.json
 
 echo "=== Configuring CMake ==="
 cmake -B build_linux -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug

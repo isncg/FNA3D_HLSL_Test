@@ -1,0 +1,29 @@
+{
+  "techniques": [
+    {
+      "name": "EnvironmentMapEffect",
+      "passes": [
+        {
+          "name": "P0",
+          "vertexShader": {
+            "source": "../shaders/env_map_vs.hlsl",
+            "entry": "VSMain"
+          },
+          "pixelShader": {
+            "source": "../shaders/env_map_ps.hlsl",
+            "entry": "PSMain"
+          }
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    { "name": "World",                 "type": "MATRIX",  "register": 0,  "default": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] },
+    { "name": "ViewProj",              "type": "MATRIX",  "register": 4,  "default": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] },
+    { "name": "EyePosition",            "type": "FLOAT4",  "register": 8,  "default": [0,0,5,0] },
+    { "name": "DiffuseColor",           "type": "FLOAT4",  "register": 9,  "default": [1,1,1,1] },
+    { "name": "EnvironmentMapAmount",    "type": "FLOAT",   "register": 10, "default": [1.0] },
+    { "name": "FresnelFactor",          "type": "FLOAT",   "register": 11, "default": [1.0] },
+    { "name": "EnvironmentMapSpecular",  "type": "FLOAT4",  "register": 12, "default": [0.3,0.3,0.3,0] }
+  ]
+}

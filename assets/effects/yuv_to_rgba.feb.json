@@ -1,0 +1,40 @@
+{
+  "techniques": [
+    {
+      "name": "YUVToRGBA",
+      "passes": [
+        {
+          "name": "P0",
+          "vertexShader": {
+            "source": "../shaders/yuv_to_rgba_vs.hlsl",
+            "entry": "VSMain"
+          },
+          "pixelShader": {
+            "source": "../shaders/yuv_to_rgba_ps.hlsl",
+            "entry": "PSMain"
+          }
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "name": "RescaleFactor",
+      "type": "FLOAT4",
+      "register": 0,
+      "default": [1,1,1,1]
+    },
+    {
+      "name": "ChannelMode",
+      "type": "INT",
+      "register": 1,
+      "default": 0
+    },
+    {
+      "name": "ColorSpace",
+      "type": "INT",
+      "register": 2,
+      "default": 0
+    }
+  ]
+}

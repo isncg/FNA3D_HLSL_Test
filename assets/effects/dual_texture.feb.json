@@ -1,0 +1,34 @@
+{
+  "techniques": [
+    {
+      "name": "DualTextureEffect",
+      "passes": [
+        {
+          "name": "P0",
+          "vertexShader": {
+            "source": "../shaders/dual_texture_vs.hlsl",
+            "entry": "VSMain"
+          },
+          "pixelShader": {
+            "source": "../shaders/dual_texture_ps.hlsl",
+            "entry": "PSMain"
+          }
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "name": "WorldViewProj",
+      "type": "MATRIX",
+      "register": 0,
+      "default": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]
+    },
+    {
+      "name": "DiffuseColor",
+      "type": "FLOAT4",
+      "register": 4,
+      "default": [1,1,1,1]
+    }
+  ]
+}

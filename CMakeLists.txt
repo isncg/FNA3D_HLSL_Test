@@ -140,3 +140,97 @@ target_link_libraries(shadow_test
 	FNA3D
 	m
 )
+
+# --- alpha_test ---
+add_executable(alpha_test
+	src/alpha_test.c
+	src/common.c
+)
+target_include_directories(alpha_test PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+target_link_libraries(alpha_test
+	SDL3::SDL3
+	FNA3D
+	m
+)
+
+# --- basic_effect_test ---
+add_executable(basic_effect_test
+	src/basic_effect_test.c
+	src/common.c
+	src/math3d.c
+)
+target_include_directories(basic_effect_test PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+target_link_libraries(basic_effect_test
+	SDL3::SDL3
+	FNA3D
+	m
+)
+
+# --- dual_texture_test ---
+add_executable(dual_texture_test
+	src/dual_texture_test.c
+	src/common.c
+	src/math3d.c
+)
+target_include_directories(dual_texture_test PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+target_link_libraries(dual_texture_test
+	SDL3::SDL3
+	FNA3D
+	m
+)
+
+# --- env_map_test ---
+add_executable(env_map_test
+	src/env_map_test.c
+	src/common.c
+	src/math3d.c
+)
+target_include_directories(env_map_test PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+target_link_libraries(env_map_test
+	SDL3::SDL3
+	FNA3D
+	m
+)
+
+# --- skinned_test ---
+add_executable(skinned_test
+	src/skinned_test.c
+	src/common.c
+	src/math3d.c
+)
+target_include_directories(skinned_test PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+target_link_libraries(skinned_test
+	SDL3::SDL3
+	FNA3D
+	m
+)
+
+# --- yuv_to_rgba_test ---
+add_executable(yuv_to_rgba_test
+	src/yuv_to_rgba_test.c
+	src/common.c
+)
+target_include_directories(yuv_to_rgba_test PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+target_link_libraries(yuv_to_rgba_test
+	SDL3::SDL3
+	FNA3D
+	m
+)

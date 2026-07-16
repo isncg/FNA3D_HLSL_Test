@@ -1,0 +1,28 @@
+{
+  "techniques": [
+    {
+      "name": "SkinnedEffect",
+      "passes": [
+        {
+          "name": "P0",
+          "vertexShader": {
+            "source": "../shaders/skinned_vs.hlsl",
+            "entry": "VSMain"
+          },
+          "pixelShader": {
+            "source": "../shaders/skinned_ps.hlsl",
+            "entry": "PSMain"
+          }
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    { "name": "World",        "type": "MATRIX",  "register": 0,  "default": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] },
+    { "name": "ViewProj",     "type": "MATRIX",  "register": 4,  "default": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] },
+    { "name": "DiffuseColor",  "type": "FLOAT4",  "register": 8,  "default": [1,1,1,1] },
+    { "name": "Modes",        "type": "FLOAT4",  "register": 20, "default": [2,0,0,0] },
+    { "name": "Bone0",        "type": "MATRIX",  "register": 22, "default": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] },
+    { "name": "Bone1",        "type": "MATRIX",  "register": 26, "default": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] }
+  ]
+}
