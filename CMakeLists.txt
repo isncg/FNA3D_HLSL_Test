@@ -10,8 +10,8 @@ find_package(SDL3 CONFIG REQUIRED)
 # Build FNA3D_HLSL from source (Linux)
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared library")
 add_subdirectory(
-	${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL
-	${CMAKE_CURRENT_BINARY_DIR}/FNA3D_HLSL
+	${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D
+	${CMAKE_CURRENT_BINARY_DIR}/FNA3D_build
 )
 
 # Output directory
@@ -23,7 +23,7 @@ add_executable(triangle_test
 	src/triangle_test.c
 )
 target_include_directories(triangle_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 )
 target_link_libraries(triangle_test
 	SDL3::SDL3
@@ -37,7 +37,7 @@ add_executable(textured_quad_test
 	src/common.c
 )
 target_include_directories(textured_quad_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(textured_quad_test
@@ -53,7 +53,7 @@ add_executable(teapot_test
 	src/math3d.c
 )
 target_include_directories(teapot_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(teapot_test
@@ -69,7 +69,7 @@ add_executable(teapot_light_test
 	src/math3d.c
 )
 target_include_directories(teapot_light_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(teapot_light_test
@@ -84,7 +84,7 @@ add_executable(matviz_test
 	src/common.c
 )
 target_include_directories(matviz_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(matviz_test
@@ -100,7 +100,7 @@ add_executable(ssao_test
 	src/math3d.c
 )
 target_include_directories(ssao_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(ssao_test
@@ -116,7 +116,7 @@ add_executable(teapot_pbr_test
 	src/math3d.c
 )
 target_include_directories(teapot_pbr_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(teapot_pbr_test
@@ -132,7 +132,7 @@ add_executable(shadow_test
 	src/math3d.c
 )
 target_include_directories(shadow_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(shadow_test
@@ -145,9 +145,10 @@ target_link_libraries(shadow_test
 add_executable(alpha_test
 	src/alpha_test.c
 	src/common.c
+	src/test_imgui.c
 )
 target_include_directories(alpha_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(alpha_test
@@ -161,9 +162,10 @@ add_executable(basic_effect_test
 	src/basic_effect_test.c
 	src/common.c
 	src/math3d.c
+	src/test_imgui.c
 )
 target_include_directories(basic_effect_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(basic_effect_test
@@ -177,9 +179,10 @@ add_executable(dual_texture_test
 	src/dual_texture_test.c
 	src/common.c
 	src/math3d.c
+	src/test_imgui.c
 )
 target_include_directories(dual_texture_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(dual_texture_test
@@ -193,9 +196,10 @@ add_executable(env_map_test
 	src/env_map_test.c
 	src/common.c
 	src/math3d.c
+	src/test_imgui.c
 )
 target_include_directories(env_map_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(env_map_test
@@ -209,9 +213,10 @@ add_executable(skinned_test
 	src/skinned_test.c
 	src/common.c
 	src/math3d.c
+	src/test_imgui.c
 )
 target_include_directories(skinned_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(skinned_test
@@ -226,7 +231,7 @@ add_executable(yuv_to_rgba_test
 	src/common.c
 )
 target_include_directories(yuv_to_rgba_test PRIVATE
-	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA3D_HLSL/include"
+	"${CMAKE_CURRENT_SOURCE_DIR}/../FNA/lib/FNA3D/include"
 	"${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 target_link_libraries(yuv_to_rgba_test
